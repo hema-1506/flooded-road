@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Flood Monitoring Dashboard</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+<meta http-equiv="refresh" content="5">
+
+</head>
+
+<body>
+
+<h1>Flood Monitoring Control Center</h1>
+
+<div class="status-box">
+<div class="road-selector">
+
+<label>Select Road</label>
+
+<select class="road-dropdown"
+        onchange="window.location.href='/?road=' + this.value">
+
+<option value="R1" {% if road == 'R1' %}selected{% endif %}>R1</option>
+<option value="R2" {% if road == 'R2' %}selected{% endif %}>R2</option>
+<option value="R3" {% if road == 'R3' %}selected{% endif %}>R3</option>
+<option value="R4" {% if road == 'R4' %}selected{% endif %}>R4</option>
+<option value="R5" {% if road == 'R5' %}selected{% endif %}>R5</option>
+
+</select>
+
+</div>
+
+</div>
+
+<div class="status-box">
+Current Status:
+<span class="status">{{ sensors.status }}</span>
+</div>
+</div>
+
+<div class="dashboard-grid">
+
+<div class="card">
+<div class="title"> Water Depth</div>
+<div class="value">{{ sensors.water_depth }} cm</div>
+</div>
+
+<div class="card">
+<div class="title"> Rainfall</div>
+<div class="value">{{ sensors.rainfall }} mm</div>
+</div>
+
+<div class="card">
+<div class="title">Temperature</div>
+<div class="value">{{ sensors.temperature }} °C</div>
+</div>
+
+<div class="card">
+<div class="title">Vehicle Speed</div>
+<div class="value">{{ sensors.vehicle_speed }} km/h</div>
+</div>
+
+<div class="card">
+<div class="title">Humidity</div>
+<div class="value">{{ sensors.humidity }} %</div>
+</div>
+
+</div>
+
+<p class="timestamp">
+Last Updated: {{ sensors.timestamp }}
+</p>
+
+</body>
+</html>
