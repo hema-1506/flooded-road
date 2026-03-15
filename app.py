@@ -12,22 +12,19 @@ def dashboard():
 
     road = request.args.get("road", "R1")
 
-    response = table.get_item(
-        Key={"road_id": road}
-    )
+    try:
+        response = table.get_item(Key={"road_id": road})
+        sensors = response.get("Item", {})
+    except Exception as e:
+        print("DynamoDB error:", e)
+        sensors = {}
 
-    if "Item" in response:
-        sensors = response["Item"]
-    else:
-        sensors = {
-            "road_id": road,
-            "water_depth": 0,
-            "rainfall": 0,
-            "temperature": 0,
-            "vehicle_speed": 0,
-            "humidity": 0,
-            "status": "NO DATA"
-        }
+    sensors.setdefault("water_depth", 0)
+    sensors.setdefault("rainfall", 0)
+    sensors.setdefault("temperature", 0)
+    sensors.setdefault("vehicle_speed", 0)
+    sensors.setdefault("humidity", 0)
+    sensors.setdefault("status", "NO DATA")
 
     sensors["timestamp"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
