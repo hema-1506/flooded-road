@@ -5,7 +5,7 @@ import datetime
 app = Flask(__name__)
 
 dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
-table = dynamodb.Table("flood-data")
+table = dynamodb.Table("Flood-Data")
 
 @app.route("/")
 def dashboard():
