@@ -64,7 +64,7 @@ jobs:
       - name: Wait for Lambda update to finish
         run: |
           aws lambda wait function-updated \
-            --function-name YOUR_LAMBDA_FUNCTION_NAME
+            --function-name FloodProcessor
 
       - name: CD success message
         run: echo "Deployment to Lambda completed successfully"
