@@ -18,6 +18,20 @@ h1{
   margin-bottom:25px;
   border-left:6px solid #4CAF50; /* highlight */
 }
+.safe {
+  background:#d4f5d4; /* green */
+  color:black;
+}
+
+.warning {
+  background:#fff3cd; /* orange */
+  color:black;
+}
+
+.flood {
+  background:#f8d7da; /* red */
+  color:black;
+}
 
 .dashboard-grid{
   display:grid;

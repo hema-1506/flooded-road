@@ -38,9 +38,18 @@
 
 </div>
 
-<div class="status-box">
+<div class="status-box 
+{% if sensors.status == 'SAFE' %}
+safe
+{% elif sensors.status == 'WARNING' %}
+warning
+{% elif sensors.status == 'FLOOD' %}
+flood
+{% endif %}">
+
 Current Status:
 <span class="status">{{ sensors.status }}</span>
+
 </div>
 </div>
 
