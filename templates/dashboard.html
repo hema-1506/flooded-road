@@ -106,8 +106,8 @@ function buildChart(id, datasets, options = {}) {
       },
       scales: {
         x: { ticks: { color: '#ccc' }, grid: { color: 'rgba(255,255,255,0.08)' } },
-        y: { beginAtZero: true, position: 'left', ticks: { color: '#ccc' }, grid: { color: 'rgba(255,255,255,0.08)' } },
-        y1: { beginAtZero: true, position: 'right', ticks: { color: '#ccc' }, grid: { display: false } }
+        y: { beginAtZero: true, position: 'left', ticks: { color: '#ccc', precision: 0 }, grid: { color: 'rgba(255,255,255,0.08)' } },
+        y1: { beginAtZero: true, position: 'right', ticks: { color: '#ccc', precision: 0 }, grid: { display: false } }
       }
     }, options)
   });
@@ -135,5 +135,204 @@ window.addEventListener('load', () => {
   });
 });
 </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood Monitoring Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta http-equiv="refresh" content="5">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+</head>
+<body>
+
+    <div class="page-header">
+        <div>
+            <h1>Flood Monitoring Control Center</h1>
+            <p class="subtitle">
+                Live road sensor trends, fog processing status, and historical charts for safer decisions.
+            </p>
+        </div>
+
+        <div class="header-meta">
+            <span class="meta-chip">Road {{ road }}</span>
+            <span class="meta-chip">{{ 'Demo Data' if use_sample else 'Live Data' }}</span>
+        </div>
+    </div>
+
+    <div class="status-box 
+        {% if sensors.status == 'SAFE' %}safe
+        {% elif sensors.status == 'WARNING' %}warning
+        {% elif sensors.status == 'FLOOD' %}flood
+        {% endif %}">
+        
+        <div class="status-panel">
+            <div class="status-label">Current Status</div>
+            <span class="status-pill 
+                {% if sensors.status == 'SAFE' %}safe
+                {% elif sensors.status == 'WARNING' %}warning
+                {% elif sensors.status == 'FLOOD' %}flood
+                {% endif %}">
+                {{ sensors.status }}
+            </span>
+        </div>
+
+        <div class="road-selector">
+            <label for="road">Select Road</label>
+            <select id="road" class="road-dropdown" onchange="window.location.href='/?road=' + this.value">
+                {% for option in road_options %}
+                    <option value="{{ option }}" {% if road == option %}selected{% endif %}>{{ option }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    {% if use_sample %}
+    <div class="demo-notice">
+        Showing demo graph data because live sensor history is unavailable.
+    </div>
+    {% endif %}
+
+    <div class="dashboard-grid">
+        <div class="card">
+            <div class="title">Water Depth</div>
+            <div class="value">{{ sensors.water_depth }} cm</div>
+        </div>
+
+        <div class="card">
+            <div class="title">Rainfall</div>
+            <div class="value">{{ sensors.rainfall }} mm</div>
+        </div>
+
+        <div class="card">
+            <div class="title">Temperature</div>
+            <div class="value">{{ sensors.temperature }} °C</div>
+        </div>
+
+        <div class="card">
+            <div class="title">Vehicle Speed</div>
+            <div class="value">{{ sensors.vehicle_speed }} km/h</div>
+        </div>
+
+        <div class="card">
+            <div class="title">Humidity</div>
+            <div class="value">{{ sensors.humidity }} %</div>
+        </div>
+    </div>
+
+    <div class="chart-grid">
+        <div class="chart-card">
+            <h2>Water Depth / Rainfall</h2>
+            <canvas id="waterRainChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h2>Temperature / Humidity</h2>
+            <canvas id="tempHumidityChart"></canvas>
+        </div>
+
+        <div class="chart-card full-width">
+            <h2>Vehicle Speed</h2>
+            <canvas id="speedChart"></canvas>
+        </div>
+    </div>
+
+    <p class="timestamp">
+        Last Updated: {{ sensors.timestamp }}
+    </p>
+
+    <script>
+        const chartLabels = {{ timeseries.timestamps | tojson }};
+        const waterDepthData = {{ timeseries.water_depth | tojson }};
+        const rainfallData = {{ timeseries.rainfall | tojson }};
+        const temperatureData = {{ timeseries.temperature | tojson }};
+        const humidityData = {{ timeseries.humidity | tojson }};
+        const vehicleSpeedData = {{ timeseries.vehicle_speed | tojson }};
+
+        new Chart(document.getElementById('waterRainChart'), {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [
+                    {
+                        label: 'Water Depth (cm)',
+                        data: waterDepthData,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'Rainfall (mm)',
+                        data: rainfallData,
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.12)',
+                        tension: 0.3,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        new Chart(document.getElementById('tempHumidityChart'), {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [
+                    {
+                        label: 'Temperature (°C)',
+                        data: temperatureData,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'Humidity (%)',
+                        data: humidityData,
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.12)',
+                        tension: 0.3,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        new Chart(document.getElementById('speedChart'), {
+            type: 'bar',
+            data: {
+                labels: chartLabels,
+                datasets: [
+                    {
+                        label: 'Vehicle Speed (km/h)',
+                        data: vehicleSpeedData,
+                        backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                        borderColor: '#ef4444',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    </script>
+
 </body>
 </html>
