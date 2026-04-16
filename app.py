@@ -1,13 +1,16 @@
 from flask import Flask, render_template, request
 import boto3
-import random
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
-# DynamoDB connection (uses IAM role automatically)
+# DynamoDB connection
 dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
-table = dynamodb.Table("Flood-Data")
+
+# Use history table for graphs + latest values
+table = dynamodb.Table("Flood-Data-History")
+
+ROAD_OPTIONS = ["R1", "R2", "R3", "R4", "R5"]
 
 
 def build_timeseries(road_items, limit=20):
@@ -28,7 +31,10 @@ def build_timeseries(road_items, limit=20):
     }
 
     for item in recent_records:
-        timeseries["timestamps"].append(item.get("timestamp", ""))
+        raw_ts = str(item.get("timestamp", ""))
+        short_ts = raw_ts[11:19] if len(raw_ts) >= 19 else raw_ts
+
+        timeseries["timestamps"].append(short_ts)
         timeseries["water_depth"].append(float(item.get("water_depth", 0)))
         timeseries["rainfall"].append(float(item.get("rainfall", 0)))
         timeseries["temperature"].append(float(item.get("temperature", 0)))
@@ -41,7 +47,7 @@ def build_timeseries(road_items, limit=20):
 def build_sample_timeseries(limit=20):
     now = datetime.utcnow()
     timestamps = [
-        (now - timedelta(minutes=(limit - i) * 5)).isoformat(timespec="seconds")
+        (now - timedelta(minutes=(limit - i) * 5)).strftime("%H:%M:%S")
         for i in range(limit)
     ]
 
@@ -70,7 +76,6 @@ def build_sample_sensors():
 
 @app.route("/")
 def dashboard():
-
     road = request.args.get("road", "R1")
 
     sensors = {
@@ -91,6 +96,7 @@ def dashboard():
         "vehicle_speed": [],
         "humidity": [],
     }
+
     use_sample = False
 
     try:
@@ -115,6 +121,7 @@ def dashboard():
                 "status": latest.get("status", "UNKNOWN"),
                 "timestamp": latest.get("timestamp", "No Data")
             }
+
             timeseries = build_timeseries(road_items)
         else:
             sensors = build_sample_sensors()
@@ -127,19 +134,22 @@ def dashboard():
         timeseries = build_sample_timeseries()
         use_sample = True
 
-        print("----- DEBUG -----")
-        print("ROAD:", road)
-        print("TOTAL ITEMS:", len(items))
-        print("ROAD ITEMS:", len(road_items))
-        print("TIMESTAMPS:", timeseries["timestamps"])
-        print("WATER:", timeseries["water_depth"])
-        print("-----------------")
+    # Debug
+    print("----- DEBUG -----")
+    print("ROAD:", road)
+    print("TOTAL ITEMS:", len(items) if 'items' in locals() else 0)
+    print("ROAD ITEMS:", len(road_items) if 'road_items' in locals() else 0)
+    print("TIMESTAMPS:", timeseries["timestamps"])
+    print("WATER:", timeseries["water_depth"])
+    print("-----------------")
+
     return render_template(
         "dashboard.html",
         sensors=sensors,
         road=road,
         timeseries=timeseries,
-        use_sample=use_sample
+        use_sample=use_sample,
+        road_options=ROAD_OPTIONS
     )
 
 
