@@ -103,7 +103,6 @@ h1 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 28px;
-  margin-top: 20px;
 }
 
 .graph-card {
@@ -115,13 +114,7 @@ h1 {
 }
 
 .graph-card h2 {
-  margin-top: 0;
   margin-bottom: 20px;
-  font-size: 24px;
-}
-
-.graph-card.full-width {
-  grid-column: 1 / -1;
 }
 
 canvas {
@@ -136,13 +129,10 @@ canvas {
   color: #444;
 }
 
+/* RESPONSIVE */
 @media (max-width: 900px) {
   .dashboard-grid,
   .graph-section {
     grid-template-columns: 1fr;
-  }
-
-  .graph-card.full-width {
-    grid-column: auto;
   }
 }

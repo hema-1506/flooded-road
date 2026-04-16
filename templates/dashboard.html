@@ -3,7 +3,7 @@
 <head>
     <title>Flood Monitoring Dashboard</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=4">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <meta http-equiv="refresh" content="5">
@@ -16,6 +16,7 @@
 
 <h1>Flood Monitoring Control Center</h1>
 
+<!-- TOP SECTION -->
 <div class="status-box
     {% if sensors.status == 'SAFE' %}safe
     {% elif sensors.status == 'WARNING' %}warning
@@ -29,7 +30,9 @@
             <select class="road-dropdown"
                     onchange="window.location.href='/?road=' + this.value">
                 {% for option in road_options %}
-                    <option value="{{ option }}" {% if road == option %}selected{% endif %}>{{ option }}</option>
+                    <option value="{{ option }}" {% if road == option %}selected{% endif %}>
+                        {{ option }}
+                    </option>
                 {% endfor %}
             </select>
         </div>
@@ -41,6 +44,7 @@
 
 </div>
 
+<!-- SENSOR CARDS -->
 <div class="dashboard-grid">
 
     <div class="card">
@@ -70,8 +74,9 @@
 
 </div>
 
-<!-- Graph Section -->
+<!-- GRAPHS -->
 <div class="graph-section">
+
     <div class="graph-card">
         <h2>Water Depth and Rainfall</h2>
         <canvas id="waterRainChart"></canvas>
@@ -82,10 +87,6 @@
         <canvas id="tempHumidityChart"></canvas>
     </div>
 
-    <div class="graph-card full-width">
-        <h2>Vehicle Speed</h2>
-        <canvas id="speedChart"></canvas>
-    </div>
 </div>
 
 <p class="timestamp">
@@ -98,8 +99,8 @@
     const rainfallData = {{ timeseries.rainfall | tojson }};
     const temperatureData = {{ timeseries.temperature | tojson }};
     const humidityData = {{ timeseries.humidity | tojson }};
-    const vehicleSpeedData = {{ timeseries.vehicle_speed | tojson }};
 
+    // Water + Rainfall
     new Chart(document.getElementById('waterRainChart'), {
         type: 'line',
         data: {
@@ -129,6 +130,7 @@
         }
     });
 
+    // Temperature + Humidity
     new Chart(document.getElementById('tempHumidityChart'), {
         type: 'line',
         data: {
@@ -158,25 +160,6 @@
         }
     });
 
-    new Chart(document.getElementById('speedChart'), {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Vehicle Speed (km/h)',
-                    data: vehicleSpeedData,
-                    backgroundColor: 'rgba(239, 68, 68, 0.6)',
-                    borderColor: '#dc2626',
-                    borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false
-        }
-    });
 </script>
 
 </body>
