@@ -133,7 +133,7 @@ def dashboard():
         print("ROAD ITEMS:", len(road_items))
         print("TIMESTAMPS:", timeseries["timestamps"])
         print("WATER:", timeseries["water_depth"])
-print("-----------------")
+        print("-----------------")
     return render_template(
         "dashboard.html",
         sensors=sensors,
