@@ -2,7 +2,8 @@
 <html>
 <head>
     <title>Flood Monitoring Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
 
     <meta http-equiv="refresh" content="5">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -12,9 +13,16 @@
 
 <body>
 
-    <h1>Flood Monitoring Control Center</h1>
+<h1>Flood Monitoring Control Center</h1>
 
-    <div class="status-box selector-box">
+<!-- ✅ COMBINED TOP SECTION -->
+<div class="status-box
+    {% if sensors.status == 'SAFE' %}safe
+    {% elif sensors.status == 'WARNING' %}warning
+    {% elif sensors.status == 'FLOOD' %}flood
+    {% endif %}">
+
+    <div class="top-row">
         <div class="road-selector">
             <label>Select Road</label>
 
@@ -29,46 +37,45 @@
         </div>
     </div>
 
-    <div class="status-box 
-        {% if sensors.status == 'SAFE' %}safe
-        {% elif sensors.status == 'WARNING' %}warning
-        {% elif sensors.status == 'FLOOD' %}flood
-        {% endif %}">
+    <div class="status-text">
         Current Status: {{ sensors.status }}
     </div>
 
-    <div class="dashboard-grid">
+</div>
 
-        <div class="card">
-            <div class="title">Water Depth</div>
-            <div class="value">{{ sensors.water_depth }} cm</div>
-        </div>
+<!-- SENSOR CARDS -->
+<div class="dashboard-grid">
 
-        <div class="card">
-            <div class="title">Rainfall</div>
-            <div class="value">{{ sensors.rainfall }} mm</div>
-        </div>
-
-        <div class="card">
-            <div class="title">Temperature</div>
-            <div class="value">{{ sensors.temperature }} °C</div>
-        </div>
-
-        <div class="card">
-            <div class="title">Vehicle Speed</div>
-            <div class="value">{{ sensors.vehicle_speed }} km/h</div>
-        </div>
-
-        <div class="card">
-            <div class="title">Humidity</div>
-            <div class="value">{{ sensors.humidity }} %</div>
-        </div>
-
+    <div class="card">
+        <div class="title">Water Depth</div>
+        <div class="value">{{ sensors.water_depth }} cm</div>
     </div>
 
-    <p class="timestamp">
-        Last Updated: {{ sensors.timestamp }}
-    </p>
+    <div class="card">
+        <div class="title">Rainfall</div>
+        <div class="value">{{ sensors.rainfall }} mm</div>
+    </div>
+
+    <div class="card">
+        <div class="title">Temperature</div>
+        <div class="value">{{ sensors.temperature }} °C</div>
+    </div>
+
+    <div class="card">
+        <div class="title">Vehicle Speed</div>
+        <div class="value">{{ sensors.vehicle_speed }} km/h</div>
+    </div>
+
+    <div class="card">
+        <div class="title">Humidity</div>
+        <div class="value">{{ sensors.humidity }} %</div>
+    </div>
+
+</div>
+
+<p class="timestamp">
+    Last Updated: {{ sensors.timestamp }}
+</p>
 
 </body>
 </html>
