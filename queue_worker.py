@@ -2,36 +2,51 @@ import boto3
 import json
 import time
 
-sqs = boto3.client("sqs", region_name="us-east-1")
-dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
-
+REGION = "us-east-1"
 QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/003174967607/FloodSensorQueue"
 
-table = dynamodb.Table("Flood-Data")
+sqs = boto3.client("sqs", region_name=REGION)
+dynamodb = boto3.resource("dynamodb", region_name=REGION)
+table = dynamodb.Table("Flood-Data-History")
 
 print("Queue worker running...")
 
 while True:
-
     response = sqs.receive_message(
         QueueUrl=QUEUE_URL,
-        MaxNumberOfMessages=5,
+        MaxNumberOfMessages=1,
         WaitTimeSeconds=10
     )
 
     messages = response.get("Messages", [])
 
-    for msg in messages:
+    if not messages:
+        continue
 
-        data = json.loads(msg["Body"])
+    for message in messages:
+        try:
+            body = json.loads(message["Body"])
 
-        table.put_item(Item=data)
+            item = {
+                "road_id": body["road_id"],
+                "timestamp": body["timestamp"],
+                "water_depth": body["water_depth"],
+                "rainfall": body["rainfall"],
+                "temperature": body["temperature"],
+                "vehicle_speed": body["vehicle_speed"],
+                "humidity": body["humidity"],
+                "status": body["status"]
+            }
 
-        print("Saved:", data)
+            table.put_item(Item=item)
+            print("Saved to Flood-Data-History:", item)
 
-        sqs.delete_message(
-            QueueUrl=QUEUE_URL,
-            ReceiptHandle=msg["ReceiptHandle"]
-        )
+            sqs.delete_message(
+                QueueUrl=QUEUE_URL,
+                ReceiptHandle=message["ReceiptHandle"]
+            )
 
-    time.sleep(2)
+        except Exception as e:
+            print("Error processing message:", str(e))
+
+    time.sleep(1)

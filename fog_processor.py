@@ -19,18 +19,19 @@ TOPIC = "flood/road/data"
 QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/003174967607/FloodSensorQueue"
 sqs = boto3.client("sqs", region_name="us-east-1")
 
+ROAD_IDS = ["R1", "R2", "R3", "R4", "R5"]
+
 
 # -------- SENSOR GENERATION --------
-def generate_sensor_data():
-    data = {
-        "road_id": "R1",  # fixed road for graph flow
+def generate_sensor_data(road_id):
+    return {
+        "road_id": road_id,
         "water_depth": random.randint(5, 40),
         "rainfall": random.randint(0, 20),
         "temperature": random.randint(18, 35),
         "vehicle_speed": random.randint(20, 80),
         "humidity": random.randint(40, 90)
     }
-    return data
 
 
 # -------- FOG PROCESSING --------
@@ -66,27 +67,29 @@ print("Connected to AWS IoT Core!")
 
 # -------- MAIN LOOP --------
 while True:
-    sensor = generate_sensor_data()
+    for road_id in ROAD_IDS:
+        sensor = generate_sensor_data(road_id)
 
-    # Fog processing
-    sensor["status"] = calculate_status(sensor["water_depth"])
-    sensor["timestamp"] = datetime.utcnow().isoformat()
+        sensor["status"] = calculate_status(sensor["water_depth"])
+        sensor["timestamp"] = datetime.utcnow().isoformat()
 
-    payload = json.dumps(sensor)
+        payload = json.dumps(sensor)
 
-    # Publish to IoT Core
-    mqtt_connection.publish(
-        topic=TOPIC,
-        payload=payload,
-        qos=mqtt.QoS.AT_LEAST_ONCE
-    )
-    print("Published to IoT Core:", sensor)
+        # Publish to IoT Core
+        mqtt_connection.publish(
+            topic=TOPIC,
+            payload=payload,
+            qos=mqtt.QoS.AT_LEAST_ONCE
+        )
+        print("Published to IoT Core:", sensor)
 
-    # Direct send to SQS
-    sqs.send_message(
-        QueueUrl=QUEUE_URL,
-        MessageBody=payload
-    )
-    print("Sent to queue:", sensor)
+        # Send directly to SQS
+        sqs.send_message(
+            QueueUrl=QUEUE_URL,
+            MessageBody=payload
+        )
+        print("Sent to queue:", sensor)
 
-    time.sleep(10)
+        time.sleep(1)
+
+    time.sleep(5)
