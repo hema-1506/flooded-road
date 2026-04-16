@@ -3,7 +3,8 @@
 <head>
     <title>Flood Monitoring Dashboard</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=4">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <meta http-equiv="refresh" content="5">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -15,7 +16,6 @@
 
 <h1>Flood Monitoring Control Center</h1>
 
-<!-- ✅ COMBINED TOP SECTION -->
 <div class="status-box
     {% if sensors.status == 'SAFE' %}safe
     {% elif sensors.status == 'WARNING' %}warning
@@ -28,11 +28,9 @@
 
             <select class="road-dropdown"
                     onchange="window.location.href='/?road=' + this.value">
-                <option value="R1" {% if road == 'R1' %}selected{% endif %}>R1</option>
-                <option value="R2" {% if road == 'R2' %}selected{% endif %}>R2</option>
-                <option value="R3" {% if road == 'R3' %}selected{% endif %}>R3</option>
-                <option value="R4" {% if road == 'R4' %}selected{% endif %}>R4</option>
-                <option value="R5" {% if road == 'R5' %}selected{% endif %}>R5</option>
+                {% for option in road_options %}
+                    <option value="{{ option }}" {% if road == option %}selected{% endif %}>{{ option }}</option>
+                {% endfor %}
             </select>
         </div>
     </div>
@@ -43,7 +41,6 @@
 
 </div>
 
-<!-- SENSOR CARDS -->
 <div class="dashboard-grid">
 
     <div class="card">
@@ -73,9 +70,114 @@
 
 </div>
 
+<!-- Graph Section -->
+<div class="graph-section">
+    <div class="graph-card">
+        <h2>Water Depth and Rainfall</h2>
+        <canvas id="waterRainChart"></canvas>
+    </div>
+
+    <div class="graph-card">
+        <h2>Temperature and Humidity</h2>
+        <canvas id="tempHumidityChart"></canvas>
+    </div>
+
+    <div class="graph-card full-width">
+        <h2>Vehicle Speed</h2>
+        <canvas id="speedChart"></canvas>
+    </div>
+</div>
+
 <p class="timestamp">
     Last Updated: {{ sensors.timestamp }}
 </p>
+
+<script>
+    const labels = {{ timeseries.timestamps | tojson }};
+    const waterDepthData = {{ timeseries.water_depth | tojson }};
+    const rainfallData = {{ timeseries.rainfall | tojson }};
+    const temperatureData = {{ timeseries.temperature | tojson }};
+    const humidityData = {{ timeseries.humidity | tojson }};
+    const vehicleSpeedData = {{ timeseries.vehicle_speed | tojson }};
+
+    new Chart(document.getElementById('waterRainChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Water Depth (cm)',
+                    data: waterDepthData,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.15)',
+                    fill: true,
+                    tension: 0.3
+                },
+                {
+                    label: 'Rainfall (mm)',
+                    data: rainfallData,
+                    borderColor: '#16a34a',
+                    backgroundColor: 'rgba(22, 163, 74, 0.15)',
+                    fill: true,
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    new Chart(document.getElementById('tempHumidityChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Temperature (°C)',
+                    data: temperatureData,
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                    fill: true,
+                    tension: 0.3
+                },
+                {
+                    label: 'Humidity (%)',
+                    data: humidityData,
+                    borderColor: '#7c3aed',
+                    backgroundColor: 'rgba(124, 58, 237, 0.15)',
+                    fill: true,
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    new Chart(document.getElementById('speedChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Vehicle Speed (km/h)',
+                    data: vehicleSpeedData,
+                    backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                    borderColor: '#dc2626',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+</script>
 
 </body>
 </html>

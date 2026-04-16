@@ -67,11 +67,12 @@ h1 {
   font-weight: bold;
 }
 
-/* GRID */
+/* SENSOR GRID */
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 28px;
+  margin-bottom: 40px;
 }
 
 /* CARDS */
@@ -97,9 +98,51 @@ h1 {
   font-weight: bold;
 }
 
+/* GRAPH SECTION */
+.graph-section {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+  margin-top: 20px;
+}
+
+.graph-card {
+  background: #f7f7f7;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+  min-height: 350px;
+}
+
+.graph-card h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 24px;
+}
+
+.graph-card.full-width {
+  grid-column: 1 / -1;
+}
+
+canvas {
+  width: 100% !important;
+  height: 280px !important;
+}
+
 /* TIMESTAMP */
 .timestamp {
   margin-top: 30px;
   font-size: 22px;
   color: #444;
+}
+
+@media (max-width: 900px) {
+  .dashboard-grid,
+  .graph-section {
+    grid-template-columns: 1fr;
+  }
+
+  .graph-card.full-width {
+    grid-column: auto;
+  }
 }
