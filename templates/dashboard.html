@@ -2,89 +2,138 @@
 <html>
 
 <head>
-
 <title>Flood Monitoring Dashboard</title>
-
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1">
-
-<meta http-equiv="refresh" content="5">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta http-equiv="refresh" content="10">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-
 </head>
 
 <body>
+<header class="page-header">
+  <div>
+    <h1>Flood Monitoring Control Center</h1>
+    <p class="subtitle">Live road sensor trends, fog processing status, and historical charts for safer decisions.</p>
+  </div>
+  <div class="header-meta">
+    <span class="meta-chip">Road {{ road }}</span>
+    <span class="meta-chip">{{ 'Demo' if use_sample else 'Live' }} data</span>
+  </div>
+</header>
 
-<h1>Flood Monitoring Control Center</h1>
-
-<div class="status-box">
-<div class="road-selector">
-
-<label>Select Road</label>
-
-<select class="road-dropdown"
-        onchange="window.location.href='/?road=' + this.value">
-
-<option value="R1" {% if road == 'R1' %}selected{% endif %}>R1</option>
-<option value="R2" {% if road == 'R2' %}selected{% endif %}>R2</option>
-<option value="R3" {% if road == 'R3' %}selected{% endif %}>R3</option>
-<option value="R4" {% if road == 'R4' %}selected{% endif %}>R4</option>
-<option value="R5" {% if road == 'R5' %}selected{% endif %}>R5</option>
-
-</select>
-
+<div class="status-box {{ sensors.status|lower }}">
+  <div class="status-panel">
+    <div class="status-label">Current status</div>
+    <div class="status-pill {{ sensors.status|lower }}">{{ sensors.status }}</div>
+  </div>
+  <div class="road-selector">
+    <label>Select road</label>
+    <select class="road-dropdown" onchange="window.location.href='/?road=' + this.value">
+      {% for option in road_options %}
+      <option value="{{ option }}" {% if road == option %}selected{% endif %}>{{ option }}</option>
+      {% endfor %}
+    </select>
+  </div>
 </div>
 
-</div>
-
-<div class="status-box 
-{% if sensors.status == 'SAFE' %}
-safe
-{% elif sensors.status == 'WARNING' %}
-warning
-{% elif sensors.status == 'FLOOD' %}
-flood
-{% endif %}">
-
-Current Status:
-<span class="status">{{ sensors.status }}</span>
-
-</div>
-</div>
+{% if use_sample %}
+<div class="demo-notice">Showing demo graph data because live sensor history is unavailable.</div>
+{% endif %}
 
 <div class="dashboard-grid">
-
-<div class="card">
-<div class="title"> Water Depth</div>
-<div class="value">{{ sensors.water_depth }} cm</div>
+  <div class="card">
+    <div class="title">Water Depth</div>
+    <div class="value">{{ sensors.water_depth }} cm</div>
+  </div>
+  <div class="card">
+    <div class="title">Rainfall</div>
+    <div class="value">{{ sensors.rainfall }} mm</div>
+  </div>
+  <div class="card">
+    <div class="title">Temperature</div>
+    <div class="value">{{ sensors.temperature }} °C</div>
+  </div>
+  <div class="card">
+    <div class="title">Vehicle Speed</div>
+    <div class="value">{{ sensors.vehicle_speed }} km/h</div>
+  </div>
+  <div class="card">
+    <div class="title">Humidity</div>
+    <div class="value">{{ sensors.humidity }} %</div>
+  </div>
 </div>
 
-<div class="card">
-<div class="title"> Rainfall</div>
-<div class="value">{{ sensors.rainfall }} mm</div>
+<div class="chart-grid">
+  <div class="chart-card">
+    <h2>Water Depth / Rainfall</h2>
+    <canvas id="depthRainChart"></canvas>
+  </div>
+  <div class="chart-card">
+    <h2>Temperature / Humidity</h2>
+    <canvas id="tempHumidityChart"></canvas>
+  </div>
+  <div class="chart-card full-width">
+    <h2>Vehicle Speed</h2>
+    <canvas id="speedChart"></canvas>
+  </div>
 </div>
 
-<div class="card">
-<div class="title">Temperature</div>
-<div class="value">{{ sensors.temperature }} °C</div>
-</div>
+<p class="timestamp">Last Updated: {{ sensors.timestamp }}</p>
 
-<div class="card">
-<div class="title">Vehicle Speed</div>
-<div class="value">{{ sensors.vehicle_speed }} km/h</div>
-</div>
+<script>
+const labels = {{ timeseries.timestamps | tojson }};
+const depthData = {{ timeseries.water_depth | tojson }};
+const rainData = {{ timeseries.rainfall | tojson }};
+const tempData = {{ timeseries.temperature | tojson }};
+const humidityData = {{ timeseries.humidity | tojson }};
+const speedData = {{ timeseries.vehicle_speed | tojson }};
 
-<div class="card">
-<div class="title">Humidity</div>
-<div class="value">{{ sensors.humidity }} %</div>
-</div>
+function buildChart(id, datasets, options = {}) {
+  const ctx = document.getElementById(id).getContext('2d');
+  return new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: Object.assign({
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 400 },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#fff' } },
+        tooltip: { enabled: true }
+      },
+      scales: {
+        x: { ticks: { color: '#ccc' }, grid: { color: 'rgba(255,255,255,0.08)' } },
+        y: { beginAtZero: true, position: 'left', ticks: { color: '#ccc' }, grid: { color: 'rgba(255,255,255,0.08)' } },
+        y1: { beginAtZero: true, position: 'right', ticks: { color: '#ccc' }, grid: { display: false } }
+      }
+    }, options)
+  });
+}
 
-</div>
+window.addEventListener('load', () => {
+  buildChart('depthRainChart', [
+    { label: 'Water Depth (cm)', data: depthData, borderColor: '#4CAF50', backgroundColor: 'rgba(76, 175, 80, 0.2)', tension: 0.3, fill: true, yAxisID: 'y' },
+    { label: 'Rainfall (mm)', data: rainData, borderColor: '#2196F3', backgroundColor: 'rgba(33, 150, 243, 0.2)', tension: 0.3, fill: true, yAxisID: 'y1' }
+  ], {
+    plugins: { title: { display: true, text: 'Water Depth vs Rainfall' } }
+  });
 
-<p class="timestamp">
-Last Updated: {{ sensors.timestamp }}
-</p>
+  buildChart('tempHumidityChart', [
+    { label: 'Temperature (°C)', data: tempData, borderColor: '#FF9800', backgroundColor: 'rgba(255, 152, 0, 0.2)', tension: 0.3, fill: true, yAxisID: 'y' },
+    { label: 'Humidity (%)', data: humidityData, borderColor: '#9C27B0', backgroundColor: 'rgba(156, 39, 176, 0.2)', tension: 0.3, fill: true, yAxisID: 'y1' }
+  ], {
+    plugins: { title: { display: true, text: 'Temperature vs Humidity' } }
+  });
 
+  buildChart('speedChart', [
+    { label: 'Vehicle Speed (km/h)', data: speedData, borderColor: '#F44336', backgroundColor: 'rgba(244, 67, 54, 0.2)', tension: 0.3, fill: true, yAxisID: 'y' }
+  ], {
+    plugins: { title: { display: true, text: 'Vehicle Speed' } }
+  });
+});
+</script>
 </body>
 </html>
