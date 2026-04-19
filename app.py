@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request
 import boto3
+import pytz
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
@@ -11,6 +12,50 @@ dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
 table = dynamodb.Table("Flood-Data-History")
 
 ROAD_OPTIONS = ["R1", "R2", "R3", "R4", "R5"]
+
+
+def convert_to_dublin_display(ts):
+    if not ts:
+        return "No Data"
+
+    try:
+        dublin = pytz.timezone("Europe/Dublin")
+
+        # Handle ISO timestamps like 2026-04-19T22:18:00 or 2026-04-19T22:18:00+00:00
+        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+
+        # If timestamp has no timezone info, assume UTC
+        if dt.tzinfo is None:
+            utc = pytz.utc
+            dt = utc.localize(dt)
+
+        # Convert to Dublin time
+        dt_dublin = dt.astimezone(dublin)
+        return dt_dublin.strftime("%Y-%m-%d %H:%M:%S")
+
+    except Exception:
+        return str(ts)
+
+
+def convert_to_dublin_time_only(ts):
+    if not ts:
+        return ""
+
+    try:
+        dublin = pytz.timezone("Europe/Dublin")
+
+        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+
+        if dt.tzinfo is None:
+            utc = pytz.utc
+            dt = utc.localize(dt)
+
+        dt_dublin = dt.astimezone(dublin)
+        return dt_dublin.strftime("%H:%M:%S")
+
+    except Exception:
+        raw_ts = str(ts)
+        return raw_ts[11:19] if len(raw_ts) >= 19 else raw_ts
 
 
 def build_timeseries(road_items, limit=20):
@@ -31,8 +76,8 @@ def build_timeseries(road_items, limit=20):
     }
 
     for item in recent_records:
-        raw_ts = str(item.get("timestamp", ""))
-        short_ts = raw_ts[11:19] if len(raw_ts) >= 19 else raw_ts
+        raw_ts = item.get("timestamp", "")
+        short_ts = convert_to_dublin_time_only(raw_ts)
 
         timeseries["timestamps"].append(short_ts)
         timeseries["water_depth"].append(float(item.get("water_depth", 0)))
@@ -45,7 +90,8 @@ def build_timeseries(road_items, limit=20):
 
 
 def build_sample_timeseries(limit=20):
-    now = datetime.utcnow()
+    dublin = pytz.timezone("Europe/Dublin")
+    now = datetime.now(dublin)
     timestamps = [
         (now - timedelta(minutes=(limit - i) * 5)).strftime("%H:%M:%S")
         for i in range(limit)
@@ -62,7 +108,8 @@ def build_sample_timeseries(limit=20):
 
 
 def build_sample_sensors():
-    now = datetime.utcnow().isoformat(timespec="seconds")
+    dublin = pytz.timezone("Europe/Dublin")
+    now = datetime.now(dublin).strftime("%Y-%m-%d %H:%M:%S")
     return {
         "water_depth": 18,
         "rainfall": 3,
@@ -119,7 +166,7 @@ def dashboard():
                 "vehicle_speed": latest.get("vehicle_speed", 0),
                 "humidity": latest.get("humidity", 0),
                 "status": latest.get("status", "UNKNOWN"),
-                "timestamp": latest.get("timestamp", "No Data")
+                "timestamp": convert_to_dublin_display(latest.get("timestamp", "No Data"))
             }
 
             timeseries = build_timeseries(road_items)
