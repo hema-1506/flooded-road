@@ -1,7 +1,7 @@
 import json
 import random
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 import boto3
 from awscrt import io, mqtt
@@ -60,7 +60,7 @@ while True:
     for road_id in ROAD_IDS:
         sensor = generate_sensor_data(road_id)
         sensor["status"] = calculate_status(sensor["water_depth"])
-        sensor["timestamp"] = datetime.utcnow().isoformat()
+        sensor["timestamp"] = datetime.now(timezone.utc).isoformat()
 
         payload = json.dumps(sensor)
 
